@@ -1,0 +1,7 @@
+{
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://fastcard-1-o23z.onrender.com/api"
+    }
+  }
+}
