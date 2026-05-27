@@ -72,7 +72,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddClick }) => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/Product/get-products', {
+      const res = await api.get('/Product/get-products', {
         params: { ProductName: searchTerm || undefined, CategoryId: selectedCategory || undefined, PageNumber: page, PageSize: 10 }
       });
       const raw = res.data;
@@ -113,7 +113,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddClick }) => {
 
   const fetchCategories = async () => {
     try {
-      const res = await api.get('/api/Category/get-categories');
+      const res = await api.get('/Category/get-categories');
       if (res.data?.data && Array.isArray(res.data.data))
         setCategories(res.data.data.map((c: any) => ({ id: c.id, name: c.categoryName })));
     } catch {
@@ -123,7 +123,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddClick }) => {
 
   const fetchBrands = async () => {
     try {
-      const res = await api.get('/api/Brand/get-brands');
+      const res = await api.get('/Brand/get-brands');
       const raw = res.data;
       const list = raw?.data?.brands || raw?.data || [];
       if (Array.isArray(list)) setBrands(list.map((b: any) => ({ id: b.id, name: b.brandName })));
@@ -134,7 +134,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddClick }) => {
 
   const fetchColors = async () => {
     try {
-      const res = await api.get('/api/Color/get-colors');
+      const res = await api.get('/Color/get-colors');
       if (res.data?.data && Array.isArray(res.data.data)) setColors(res.data.data);
     } catch {
       setColors([{ id: 1, colorName: 'Black' }, { id: 2, colorName: 'White' }, { id: 3, colorName: 'Red' }]);
@@ -153,7 +153,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddClick }) => {
 
   const handleDeleteConfirm = async () => {
     if (itemToDelete) {
-      try { await api.delete('/api/Product/delete-product', { params: { id: itemToDelete } }); }
+      try { await api.delete('/Product/delete-product', { params: { id: itemToDelete } }); }
       catch { setProducts(prev => prev.filter(p => p.id !== itemToDelete)); }
       fetchProducts();
     } else if (selectedIds.length > 0) {
@@ -199,7 +199,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddClick }) => {
         fd.append('HasDiscount', (!isNaN(disc) && disc > 0).toString());
         if (!isNaN(disc) && disc > 0) fd.append('DiscountPrice', String(disc));
         fd.append('Images', editImage);
-        await api.put('/api/Product/update-product', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        await api.put('/Product/update-product', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       } else {
         // No image → JSON body
         const body: Record<string, any> = { Id: editProduct.id };
@@ -213,7 +213,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onAddClick }) => {
         const disc = parseFloat(editDiscount);
         if (!isNaN(disc) && disc > 0) body.DiscountPrice = disc;
         body.HasDiscount = !isNaN(disc) && disc > 0;
-      await api.put('/api/Product/update-product', body);
+      await api.put('/Product/update-product', body);
       }
       setEditSuccess(true);
       await fetchProducts();

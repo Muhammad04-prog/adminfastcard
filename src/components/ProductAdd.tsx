@@ -189,7 +189,7 @@ export const ProductAdd: React.FC<ProductAddProps> = ({ onBackClick }) => {
     images.forEach((img) => formData.append("Images", img));
 
     try {
-      await api.post("/api/Product/add-product", formData, {
+      await api.post("/Product/add-product", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setShowSuccessModal(true);
@@ -233,7 +233,7 @@ export const ProductAdd: React.FC<ProductAddProps> = ({ onBackClick }) => {
   const handleCreateColorModalSubmit = async () => {
     if (!newColorName.trim()) return;
     try {
-      const res = await api.post("/api/Color/add-color", {
+      const res = await api.post("/Color/add-color", {
         colorName: newColorName.trim(),
       });
       if (res.data && res.data.data) {

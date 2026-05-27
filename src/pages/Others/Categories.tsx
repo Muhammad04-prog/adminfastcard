@@ -66,7 +66,7 @@ const Categories: React.FC = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/api/Category/get-categories");
+      const res = await api.get("/Category/get-categories");
       const raw = res.data;
       if (raw && Array.isArray(raw.data)) {
         setCategories(raw.data);
@@ -106,7 +106,7 @@ const Categories: React.FC = () => {
       const fd = new FormData();
       fd.append("CategoryName", addName.trim());
       if (addFile) fd.append("CategoryImage", addFile);
-      await api.post("/api/Category/add-category", fd, {
+      await api.post("/Category/add-category", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       await fetchCategories();
@@ -142,7 +142,7 @@ const Categories: React.FC = () => {
       fd.append("Id", String(editCat.id));
       fd.append("CategoryName", editName.trim());
       if (editFile) fd.append("CategoryImage", editFile);
-      await api.put("/api/Category/update-category", fd, {
+      await api.put("/Category/update-category", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       await fetchCategories();
@@ -158,7 +158,7 @@ const Categories: React.FC = () => {
     if (!deleteCat) return;
     setDeleteLoading(true);
     try {
-      await api.delete("/api/Category/delete-category", {
+      await api.delete("/Category/delete-category", {
         params: { id: deleteCat.id },
       });
       await fetchCategories();

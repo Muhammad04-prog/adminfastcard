@@ -29,7 +29,7 @@ const Brands: React.FC = () => {
   const fetchBrands = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/Brand/get-brands');
+      const res = await api.get('/Brand/get-brands');
       const raw = res.data;
       if (raw?.data?.brands && Array.isArray(raw.data.brands)) {
         setBrands(raw.data.brands);
@@ -53,7 +53,7 @@ const Brands: React.FC = () => {
     if (!newName.trim()) return;
     setAddLoading(true);
     try {
-      await api.post('/api/Brand/add-brand', { brandName: newName.trim() });
+      await api.post('/Brand/add-brand', { brandName: newName.trim() });
       setNewName('');
       await fetchBrands();
     } catch {
@@ -67,7 +67,7 @@ const Brands: React.FC = () => {
     if (!editId || !editName.trim()) return;
     setEditLoading(true);
     try {
-      await api.put('/api/Brand/update-brand', { id: editId, brandName: editName.trim() });
+      await api.put('/Brand/update-brand', { id: editId, brandName: editName.trim() });
       await fetchBrands();
     } catch {
       setBrands(prev => prev.map(b => b.id === editId ? { ...b, brandName: editName.trim() } : b));
@@ -80,7 +80,7 @@ const Brands: React.FC = () => {
     if (!deleteBrand) return;
     setDeleteLoading(true);
     try {
-      await api.delete('/api/Brand/delete-brand', { params: { id: deleteBrand.id } });
+      await api.delete('/Brand/delete-brand', { params: { id: deleteBrand.id } });
       await fetchBrands();
     } catch {
       setBrands(prev => prev.filter(b => b.id !== deleteBrand.id));
