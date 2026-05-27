@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# Документация по разработке и исправлениям (Admin-Panel)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+В этом документе пошагово описано, **что именно** было сделано в проекте административной панели (`Admin-Panel`), **какие технологии** использовались для решения задач и **почему** были приняты такие решения (обоснование).
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 1. Рефакторинг структуры (Layout)
+**Проблема:** Вся логика верхней панели навигации (Header) и боковой панели (Sidebar) находилась в одном большом файле `Layout.tsx`. Это усложняло чтение и поддержку кода.
+**Что было сделано:**
+- Созданы отдельные компоненты: `src/components/Header.tsx` и `src/components/Sidebar.tsx`.
+- `Layout.tsx` был очищен и теперь выступает только как обертка, импортирующая эти компоненты и `<Outlet />` для дочерних маршрутов.
+- Удален неиспользуемый файл `src/pages/Sidebar.tsx`.
+**Обоснование:** Модульность — ключевой принцип React. Разделение кода на изолированные компоненты упрощает поддержку, позволяет переиспользовать компоненты в будущем и предотвращает конфликты при совместной разработке.
 
-## React Compiler
+## 2. Реализация CRUD для дополнительных разделов
+**Проблема:** Не было функционала для работы с категориями, брендами и баннерами.
+**Что было сделано:** 
+- Созданы компоненты `Categories.tsx`, `Brands.tsx` и `Banners.tsx` внутри `src/pages/Others/`.
+- Настроен CRUD (Create, Read, Update, Delete) функционал для Категорий и Брендов с использованием `axios` через централизованный файл `api.ts`.
+**Обоснование:** Эти разделы необходимы для полноценного управления интернет-магазином. Разделение их по вкладкам в файле `Other.tsx` обеспечивает удобный пользовательский интерфейс.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 3. Редактирование товаров с поддержкой изображений (ProductList.tsx)
+**Проблема:** Изначально обновление товаров поддерживало только текстовые данные (JSON), и у администратора не было возможности загружать/изменять картинку товара при редактировании. При сохранении модальное окно закрывалось быстрее, чем загружались обновленные данные.
+**Что было сделано:**
+- В модальное окно редактирования добавлена зона загрузки изображения (Drag & Drop / Клик).
+- Логика запроса `PUT /api/Product/update-product` была переведена на использование `multipart/form-data`, если выбрано новое изображение (`FormData`), и на обычный JSON, если изображение не менялось.
+- Добавлен `await fetchProducts();` перед закрытием модального окна.
+**Обоснование:** Использование `multipart/form-data` необходимо для передачи файлов на сервер. Ожидание завершения `fetchProducts` гарантирует, что таблица обновится актуальными данными с сервера до того, как окно закроется, предотвращая "мигание" или показ устаревших данных.
 
-## Expanding the ESLint configuration
+## 4. Динамические данные в Dashboard
+**Проблема:** На главной странице (Dashboard) отображались захардкоженные товары, а кнопка "See All" не работала.
+**Что было сделано:**
+- Добавлен хук `useEffect` для запроса `GET /api/Product/get-products?PageNumber=1&PageSize=5` для получения реальных топ-5 товаров.
+- На кнопку "See All" добавлен обработчик `navigate('/products')`.
+**Обоснование:** Dashboard должен отображать актуальное состояние бизнеса. Использование реального API делает панель функциональной и интерактивной.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 5. Исправление бага с графиком (ApexCharts) в Dashboard
+**Проблема:** При редактировании кода (Hot Module Replacement) или при любом обновлении состояния компонента, график `Sales Revenue` исчезал (React "убивал" его из-за конфликта анимаций). Вы просили добавить "медленную анимацию", но график ломался.
+**Что было сделано:**
+- В настройки графика добавлена плавная анимация (`speed: 2500`).
+- Настройкам `chartOptions` был присвоен уникальный идентификатор `id: 'sales-revenue-chart'`, а самому компоненту `<Chart />` добавлен атрибут `key`.
+- Конфигурации вынесены в `React.useMemo()`.
+**Обоснование:** Библиотека `react-apexcharts` часто некорректно ведет себя при HMR (горячей перезагрузке) или изменении state в React 18, если объекты настроек пересоздаются. Обертка `useMemo` гарантирует, что ссылка на объект настроек останется стабильной. Это решает проблему "исчезновения" графика.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 6. Централизация API и авторизация
+**Проблема:** Запросы к API дублировали базовый URL, а токены доступа приходилось бы передавать вручную.
+**Что было сделано:** 
+- Создан и настроен файл `src/services/api.ts` с экземпляром `axios`.
+- URL берется из `.env` (`VITE_API_URL`).
+- Настроен `axios.interceptors.request` для автоматического добавления JWT токена из `localStorage` во все исходящие запросы.
+**Обоснование:** Перехватчики (interceptors) избавляют от дублирования кода и позволяют централизованно управлять заголовками авторизации и ошибками (например, 401 Unauthorized).
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 7. Логика выхода из аккаунта (Header)
+**Проблема:** В шапке админ-панели имя было заглушкой, и администратор не мог выйти из системы.
+**Что было сделано:**
+- Иконка пользователя превращена в работающее выпадающее меню (dropdown).
+- Добавлена логика `handleLogout`: очистка глобального стейта через `dispatch(logout())`, удаление `token` из `localStorage` и редирект `navigate('/login')`.
+**Обоснование:** Полноценный флоу безопасности требует возможности безопасно прерывать сессию.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Итог по стеку технологий:
+- **React + TypeScript + Vite**: Высокая скорость разработки, строгая типизация (меньше багов) и быстрый HMR.
+- **Tailwind CSS**: Использован для быстрой и гибкой стилизации (utility-first), что позволило легко верстать модальные окна и таблицы без отдельного CSS.
+- **Lucide React**: Легковесная библиотека иконок для единообразного дизайна.
+- **React Router Dom**: Обеспечивает клиентскую маршрутизацию (SPA) между страницами без перезагрузки браузера.
+- **Axios**: Использован для HTTP-запросов благодаря встроенной поддержке перехватчиков (interceptors) и удобной работе с JSON и FormData.
+- **Redux Toolkit & React-Redux**: Настроен в приложении (см. `src/store`) и используется для глобального управления состоянием, например, для логики авторизации (Auth) на странице входа (`Login.tsx`). Для локальных CRUD-операций осознанно выбран `useState`.
+- **ApexCharts**: Мощная библиотека для построения графиков статистики (использована для Sales Revenue).
