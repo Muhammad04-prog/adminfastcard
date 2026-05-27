@@ -50,6 +50,7 @@ const Login: React.FC = () => {
             token: 'mock-jwt-token-fastcard-admin-xyz-12345',
           })
         );
+        localStorage.setItem('token', 'mock-jwt-token-fastcard-admin-xyz-12345');
         setSubmitting(false);
         navigate('/');
       }, 600);
